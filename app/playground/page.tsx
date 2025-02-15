@@ -19,20 +19,30 @@ export default function PlaygroundPage() {
     const fetchPosts = async () => {
       try {
         const response = await fetch(
-          "https://api.rss2json.com/v1/api.json?rss_url=https://medium.com/feed/@mehulpratapsingh",
+          "https://api.rss2json.com/v1/api.json?rss_url=https://medium.com/feed/@mehulpratapsingh"
         )
         if (!response.ok) {
           throw new Error("Failed to fetch posts")
         }
         const data = await response.json()
-        setPosts(data.items.slice(0, 3)) // Fetch latest 3 posts
+  
+        const postsWithThumbnails = data.items.slice(0, 10).map((post) => {
+          // Extract the first image from the content
+          const imgMatch = post.content.match(/<img[^>]+src="([^">]+)"/)
+          return {
+            ...post,
+            thumbnail: imgMatch ? imgMatch[1] : "/default-thumbnail.jpg", // Fallback image
+          }
+        })
+  
+        setPosts(postsWithThumbnails)
       } catch (error) {
         console.error("Error fetching Medium posts:", error)
       } finally {
         setLoading(false)
       }
     }
-
+  
     fetchPosts()
   }, [])
 
@@ -51,7 +61,7 @@ export default function PlaygroundPage() {
           <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-primary/20 to-secondary/20 opacity-50 blur-xl group-hover:opacity-75 transition-opacity duration-500 -z-10" />
 
           <div className="flex flex-col lg:flex-row gap-12 p-8 bg-black/30 backdrop-blur-xl rounded-3xl border border-primary/10 shadow-2xl">
-            <div className="lg:w-2/3 space-y-8">
+            <div className="lg:w-2/3 space-y-6">
               <h2 className="text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent animate-text-shine">
                 Architecting Intelligent Systems
               </h2>
@@ -91,20 +101,20 @@ export default function PlaygroundPage() {
               </div>
             </div>
 
-            <div className="lg:w-1/3 space-y-8">
+            <div className="lg:w-1/4 space-y-8">
               <div className="relative aspect-square rounded-2xl overflow-hidden border-2 border-primary/30 hover:border-primary/50 transition-all duration-500 transform hover:scale-105 holographic-effect">
                 <Image
                   src="/avaatar.png"
                   alt="Mehul Pratap Singh"
                   // layout="fill"
                   // objectFit="cover"
-                  width={300} // Adjust width as needed
+                  width={250} // Adjust width as needed
                   height={200}
                   className="rounded-2xl"
                 />
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-5">
                 <a
                   href="https://drive.google.com/file/d/1fEI1LiqRRkxY5gjTKdLZDM_KtTLGkrBM/view?usp=sharing"
                   target="_blank"
@@ -236,9 +246,9 @@ function SkillsSection() {
 function ProjectsSection() {
   const projects = [
     {
-      title: "RAG Pipeline Optimizer",
-      description: "Next-gen retrieval system with hybrid search capabilities",
-      technologies: ["LangChain", "Pinecone", "Llama 2"],
+      title: "ATS Friendly Resume-Builder",
+      description: "Next-gen resume building and analysis system with 80+ ATS scring resume",
+      technologies: ["Python","LangChain","Deepseek-r1","Open Router","Streamlit"],
     },
     {
       title: "AI-Powered Code Reviewer",
@@ -293,39 +303,80 @@ function ProjectCard({ title, description, technologies }) {
 }
 
 function BlogPostsSection({ posts, loading }) {
+  const scrollRef = React.useRef(null);
+
+  const scroll = (scrollOffset) => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: scrollOffset, behavior: "smooth" });
+    }
+  };
+
   return (
     <section className="mb-16">
-      <h2 className="text-4xl font-bold mb-8 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+      <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
         Latest Articles
       </h2>
+
       {loading ? (
         <div className="flex justify-center items-center h-32">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {posts.map((post) => (
-            <a
-              key={post.guid}
-              href={post.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-black/30 backdrop-blur-xl rounded-xl border border-primary/10 hover:border-primary/30 transition-all duration-300 overflow-hidden group"
-            >
-              <div className="p-6">
-                <h3 className="font-bold text-xl mb-3 text-primary group-hover:text-secondary transition-colors duration-300">
-                  {post.title}
-                </h3>
-                <p className="text-sm text-gray-300 line-clamp-3">{post.description.replace(/<[^>]+>/g, "")}</p>
-                <span className="inline-block mt-4 text-primary group-hover:text-secondary transition-colors duration-300">
-                  Read more →
-                </span>
-              </div>
-            </a>
-          ))}
+        <div className="relative">
+          {/* Left Scroll Button */}
+          <button 
+            onClick={() => scroll(-300)}
+            className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-black/50 p-2 rounded-full shadow-md hover:bg-black/70 transition z-10"
+          >
+            <ArrowLeft className="text-white w-6 h-6" />
+          </button>
+
+          {/* Scrollable Blog Container */}
+          <div 
+            ref={scrollRef}
+            className="flex space-x-4 overflow-x-auto scrollbar-hide px-2 py-4"
+            style={{ scrollBehavior: "smooth", whiteSpace: "nowrap" }}
+          >
+            {posts.map((post) => (
+              <a
+                key={post.guid}
+                href={post.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="min-w-[300px] max-w-[300px] bg-black/30 backdrop-blur-xl rounded-xl border border-primary/10 hover:border-primary/30 transition-all duration-300 overflow-hidden group"
+              >
+                <Image
+                  src={post.thumbnail || "/fallback-thumbnail.jpg"}
+                  alt={post.title}
+                  width={300}
+                  height={180}
+                  className="w-full h-44 object-cover rounded-t-xl"
+                />
+                <div className="p-4">
+                  <h3 className="font-bold text-lg mb-2 text-primary group-hover:text-secondary transition-colors duration-300">
+                    {post.title}
+                  </h3>
+                  <p className="text-sm text-gray-300 line-clamp-3">
+                    {post.description.replace(/<[^>]+>/g, "")}
+                  </p>
+                  <span className="inline-block mt-3 text-primary group-hover:text-secondary transition-colors duration-300">
+                    Read more →
+                  </span>
+                </div>
+              </a>
+            ))}
+          </div>
+
+          {/* Right Scroll Button */}
+          <button 
+            onClick={() => scroll(300)}
+            className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-black/50 p-2 rounded-full shadow-md hover:bg-black/70 transition z-10"
+          >
+            <ArrowLeft className="rotate-180 text-white w-6 h-6" />
+          </button>
         </div>
       )}
     </section>
-  )
+  );
 }
 
